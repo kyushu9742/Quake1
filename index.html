@@ -46,12 +46,30 @@
     maxZoom: 18
   }).addTo(map);
 
-  // 🔴 テスト用 揺れ
+  <script>
+  const map = L.map('map').setView([36.2, 138.2], 5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(map);
+
+  // 震度（0〜7 を想定）
+  const shindo = 5; // ← ここを変えると色が変わる
+
+  function shindoColor(s) {
+    if (s >= 6) return 'red';
+    if (s >= 5) return 'orange';
+    if (s >= 4) return 'yellow';
+    if (s >= 3) return 'lime';
+    return 'cyan';
+  }
+
   L.circle([35.6895, 139.6917], {
     radius: 50000,
-    color: 'red',
-    fillOpacity: 0.5
-  }).addTo(map);
+    color: shindoColor(shindo),
+    fillColor: shindoColor(shindo),
+    fillOpacity: 0.6
+  }).addTo(map).bindPopup("震度 " + shindo);
 </script>
 
 </body>
