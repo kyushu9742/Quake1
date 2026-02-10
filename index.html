@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <title>簡易 強震モニタ</title>
+  <meta charset="UTF-8">
+  <title>簡易 強震モニタ 完全版</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link
@@ -15,7 +15,7 @@
       margin: 0;
       background: #000;
       color: #0f0;
-      font-family: monospace; /* ← UDはあと */
+      font-family: monospace; /* UDフォントはあとで変更可 */
     }
     #map {
       width: 100vw;
@@ -40,22 +40,13 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+  // ① 地図
   const map = L.map('map').setView([36.2, 138.2], 5);
-
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
   }).addTo(map);
 
-  <script>
-  const map = L.map('map').setView([36.2, 138.2], 5);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18
-  }).addTo(map);
-
-  // 震度（0〜7 を想定）
-  const shindo = 5; // ← ここを変えると色が変わる
-
+  // ② 震度→色変換関数
   function shindoColor(s) {
     if (s >= 6) return 'red';
     if (s >= 5) return 'orange';
@@ -64,12 +55,22 @@
     return 'cyan';
   }
 
-  L.circle([35.6895, 139.6917], {
-    radius: 50000,
-    color: shindoColor(shindo),
-    fillColor: shindoColor(shindo),
-    fillOpacity: 0.6
-  }).addTo(map).bindPopup("震度 " + shindo);
+  // ③ テスト用震度データ
+  const quakes = [
+    { lat: 35.6895, lng: 139.6917, shindo: 5, place: "東京" },
+    { lat: 34.6937, lng: 135.5023, shindo: 4, place: "大阪" },
+    { lat: 38.2682, lng: 140.8694, shindo: 3, place: "仙台" }
+  ];
+
+  // ④ 地図に表示
+  quakes.forEach(q => {
+    L.circle([q.lat, q.lng], {
+      radius: 50000,
+      color: shindoColor(q.shindo),
+      fillColor: shindoColor(q.shindo),
+      fillOpacity: 0.6
+    }).addTo(map).bindPopup(`${q.place} 震度 ${q.shindo}`);
+  });
 </script>
 
 </body>
