@@ -1,11 +1,10 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>自作 強震モニタ</title>
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
@@ -29,7 +28,6 @@
       border-radius: 8px;
       font-size: 14px;
       line-height: 1.4;
-      box-shadow: 0 0 10px rgba(0,0,0,0.6);
     }
   </style>
 </head>
@@ -41,22 +39,21 @@
 <script>
   // 地図
   const map = L.map("map").setView([36.5, 138], 5);
-
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
 
-  // 気象庁 地震リスト
-  const LIST_URL = "https://www.jma.go.jp/bosai/quake/data/list.json";
+  
+  const LIST_URL = "https://script.google.com/macros/s/AKfycbw9cDDfLCnJ56OQtTx_Ln7_pOfzbwnS64OmJUaKHvwX-U-UKLqczvxmdPE5bxj1F4PT/exec";
 
   async function loadQuake() {
     try {
       const res = await fetch(LIST_URL);
       const list = await res.json();
 
-      // 最新の地震（1件目）
       const latest = list[0];
-      const detailUrl = "https://www.jma.go.jp/bosai/quake/data/" + latest.json;
+      const detailUrl =
+        "https://www.jma.go.jp/bosai/quake/data/" + latest.json;
 
       const res2 = await fetch(detailUrl);
       const data = await res2.json();
@@ -65,23 +62,22 @@
       const place = data.earthquake.hypocenter.name;
       const mag = data.earthquake.hypocenter.magnitude;
 
-      // 最大震度を探す
-      let maxInt = "不明";
-      if (data.intensity && data.intensity.observations) {
-        let max = 0;
+      let max = "不明";
+      if (data.intensity?.observations) {
+        let m = 0;
         data.intensity.observations.forEach(o => {
           o.intensity.forEach(i => {
             const v = Number(i.maxInt);
-            if (!isNaN(v) && v > max) max = v;
+            if (!isNaN(v) && v > m) m = v;
           });
         });
-        if (max > 0) maxInt = max;
+        if (m > 0) max = m;
       }
 
       document.getElementById("info").innerHTML =
         `🕒 ${time}<br>` +
         `📍 ${place}<br>` +
-        `🌋 M${mag} / 最大震度 ${maxInt}`;
+        `🌋 M${mag} / 最大震度 ${max}`;
 
     } catch (e) {
       document.getElementById("info").textContent =
@@ -91,7 +87,6 @@
   }
 
   loadQuake();
-  // 60秒ごとに更新
   setInterval(loadQuake, 60000);
 </script>
 
