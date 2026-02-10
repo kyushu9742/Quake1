@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>簡易 強震モニタ 完全版</title>
+  <title>自作 強震モニタ 本物版</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link
@@ -15,16 +15,12 @@
       margin: 0;
       background: #000;
       color: #0f0;
-      font-family: monospace; /* UDフォントはあとで変更可 */
+      font-family: monospace; /* UDフォントに変えてもOK */
     }
-    #map {
-      width: 100vw;
-      height: 100vh;
-    }
+    #map { width: 100vw; height: 100vh; }
     .info {
       position: fixed;
-      top: 8px;
-      left: 8px;
+      top: 8px; left: 8px;
       background: rgba(0,0,0,0.7);
       border: 1px solid #0f0;
       padding: 6px 10px;
@@ -35,18 +31,18 @@
 </head>
 <body>
 
-<div class="info">🟢 強震モニタ（テスト）</div>
+<div class="info" id="info">地震情報取得中…</div>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // ① 地図
   const map = L.map('map').setView([36.2, 138.2], 5);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18
   }).addTo(map);
 
-  // ② 震度→色変換関数
+  // 震度→色
   function shindoColor(s) {
     if (s >= 6) return 'red';
     if (s >= 5) return 'orange';
@@ -55,22 +51,58 @@
     return 'cyan';
   }
 
-  // ③ テスト用震度データ
-  const quakes = [
-    { lat: 35.6895, lng: 139.6917, shindo: 5, place: "東京" },
-    { lat: 34.6937, lng: 135.5023, shindo: 4, place: "大阪" },
-    { lat: 38.2682, lng: 140.8694, shindo: 3, place: "仙台" }
-  ];
+  // 最新地震情報を取得
+  async function loadQuake() {
+    try {
+      const res = await fetch("https://www.jma.go.jp/bosai/quake/data/list.json");
+      const list = await res.json();
 
-  // ④ 地図に表示
-  quakes.forEach(q => {
-    L.circle([q.lat, q.lng], {
-      radius: 50000,
-      color: shindoColor(q.shindo),
-      fillColor: shindoColor(q.shindo),
-      fillOpacity: 0.6
-    }).addTo(map).bindPopup(`${q.place} 震度 ${q.shindo}`);
-  });
+      if (list.length === 0) {
+        document.getElementById("info").textContent = "最新地震なし";
+        return;
+      }
+
+      const latest = list[0]; // 最新の1件
+      const detailRes = await fetch("https://www.jma.go.jp/bosai/quake/data/" + latest.json);
+      const data = await detailRes.json();
+
+      const time = data.earthquake.time.replace("T", " ");
+      const place = data.earthquake.hypocenter.name;
+      const mag = data.earthquake.hypocenter.magnitude;
+
+      // 最大震度
+      let maxShindo = 0;
+      if (data.intensity?.observations) {
+        data.intensity.observations.forEach(o => {
+          o.intensity.forEach(i => {
+            const v = Number(i.maxInt);
+            if (!isNaN(v) && v > maxShindo) maxShindo = v;
+          });
+        });
+      }
+
+      document.getElementById("info").innerHTML =
+        `🕒 ${time}<br>📍 ${place}<br>🌋 M${mag} / 最大震度 ${maxShindo}`;
+
+      // 赤丸（最大震度）
+      const lat = data.earthquake.hypocenter.latitude;
+      const lng = data.earthquake.hypocenter.longitude;
+
+      L.circle([lat, lng], {
+        radius: 50000,
+        color: shindoColor(maxShindo),
+        fillColor: shindoColor(maxShindo),
+        fillOpacity: 0.6
+      }).addTo(map).bindPopup(`${place} 震度 ${maxShindo}`);
+
+    } catch (e) {
+      console.error(e);
+      document.getElementById("info").textContent = "地震情報の取得に失敗しました";
+    }
+  }
+
+  loadQuake();
+  setInterval(loadQuake, 60000); // 1分ごと更新
 </script>
 
 </body>
